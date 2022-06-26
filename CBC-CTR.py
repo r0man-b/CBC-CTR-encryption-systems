@@ -23,6 +23,10 @@ def left_shift(bin): # left shifts a binary string
     bin += '0'
     return bin
 
+def hex_inc(str): # increments a 64-bit hex string by one
+    if (str == "ffffffffffffffff"): return "0000000000000000"
+    return hex(int(str, 16) + 1)[2:].zfill(16)
+
 def strxor(a, b): # xor two strings of different lengths
     if len(a) > len(b):
         return "".join([chr(ord(x) ^ ord(y)) for (x, y) in zip(a[:len(b)], b)])
@@ -39,14 +43,18 @@ def binxor(a, b): # xor two binary strings
     #return '{0:b}'.format(int(a,2) ^ int(b,2)).zfill(8)
     return (bin(int(a,2) ^ int(b,2)))[2:].zfill(8)
 
-def fill_array(str): # turns an 16 byte input string into a 4x4 array of bytes
+def fill_array(s): # turns an 16 byte input string into a 4x4 array of bytes
+    if len(s) < 32:
+        print("WARNING: LENGTH OF STR IS: " + str(len(s)))
+        s = s.zfill(32)
+        print("STRING IS NOW: " + s)
     arr = []
     for i in range(0, 8, 2):
         byte = ""
         sub_arr = []
-        for j in range(0, len(str), 8):
-            byte += str[i+j]
-            byte += str[i+1+j]
+        for j in range(0, len(s), 8):
+            byte += s[i+j]
+            byte += s[i+1+j]
             sub_arr.append(byte)
             byte = ""
         arr.append(sub_arr)
@@ -955,11 +963,86 @@ def decrypt_cbc(key, ct):
 
 
 
+def encrypt_ctr(key, msg): # Counter mode encryption using the above implementation of AES
+    cipher = ""
+    hex_msg = convert_to_hex(msg)
+
+    # pad the message if not divisible by blocksize, otherwise add a dummy block
+    '''
+    padding = 16 - len(msg) % 16
+    if padding != 0:
+        for i in range(padding):
+            hex_msg += '0'
+            hex_msg += hex(padding)[2:]
+    else:
+        for i in range(16):
+            hex_msg += '10'
+    '''
+
+    # create the initialization vector and make it the start of the ciphertext
+    nonce = secrets.token_hex(16)
+    cipher += nonce
+    iter = 0
+
+    # the encryption circuit
+    for i in range(0, len(hex_msg), 32):
+        iter = i
+        if (i + 32 > len(hex_msg)):
+            break
+        cipher += hexxor(hex_msg[i:i+32], AES_ENCRYPT(key, nonce))
+        nonce = hex_inc(nonce)
+
+    # check for any remaining message syntax after each 128 bit block has been encrypted
+    if (iter < len(hex_msg)):
+        i = 0
+        aes = AES_ENCRYPT(key, nonce)
+        while (iter < len(hex_msg)):
+            cipher += hexxor(hex_msg[iter:iter+1], aes[i:i+1])
+            iter += 1
+            i += 1
+
+    return cipher
+
+def decrypt_ctr(key, ct):
+    pt = ""
+    nonce = ct[0:32]
+
+    # the decryption circuit
+    for i in range(32, len(ct), 32):
+        iter = i
+        if (i + 32 > len(ct)):
+            break
+        pt += hexxor(ct[i:i+32], AES_ENCRYPT(key, nonce))
+        nonce = hex_inc(nonce)
+
+    # check for any remaining message syntax after each 128 bit block has been decrypted
+    if (iter < len(ct)):
+        i = 0
+        aes = AES_ENCRYPT(key, nonce)
+        while (iter < len(ct)):
+            pt += hexxor(ct[iter:iter+2], aes[i:i+2])
+            iter += 2
+            i += 2
+
+    return convert_to_str(pt)
+
+
+
 
 def main():
-    #print(encrypt_cbc('140b41b22a29beb4061bda66b6747e14', 'This is a seriously secret secret'))
-    print(decrypt_cbc('140b41b22a29beb4061bda66b6747e14', '4ca00ff4c898d61e1edbf1800618fb2828a226d160dad07883d04e008a7897ee2e4b7465d5290d0c0e6c6822236e1daafb94ffe0c5da05d9476be028ad7c1d81'))
-    print(decrypt_cbc('140b41b22a29beb4061bda66b6747e14', encrypt_cbc('140b41b22a29beb4061bda66b6747e14', 'This is a seriously secret secret.')))
+    #print(decrypt_cbc("36f18357be4dbd77f050515c73fcf9f2", encrypt_cbc("36f18357be4dbd77f050515c73fcf9f2", "this is a seriously secret secret")))
+
+    print(decrypt_ctr("36f18357be4dbd77f050515c73fcf9f2", encrypt_ctr("36f18357be4dbd77f050515c73fcf9f2", "This is a seriously secret secret, and no-one will ever figure out the secret")))
+
+    print(decrypt_ctr("36f18357be4dbd77f050515c73fcf9f2", "69dda8455c7dd4254bf353b773304eec0ec7702330098ce7f7520d1cbbb20fc388d1b0adb5054dbd7370849dbf0b88d393f252e764f1f5f7ad97ef79d59ce29f5f51eeca32eabedd9afa9329"))
+
+    print(decrypt_ctr("36f18357be4dbd77f050515c73fcf9f2", "770b80259ec33beb2561358a9f2dc617e46218c0a53cbeca695ae45faa8952aa0e311bde9d4e01726d3184c34451"))
+
+
+
+
+
+
 
     '''
             if i + 32 == len(ct):
