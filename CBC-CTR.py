@@ -40,7 +40,6 @@ def hexxor(a, b): # xor two hex strings of different lengths
         return (hex(int(a, 16) ^ int(b, 16))[2:]).zfill(len(b))
 
 def binxor(a, b): # xor two binary strings
-    #return '{0:b}'.format(int(a,2) ^ int(b,2)).zfill(8)
     return (bin(int(a,2) ^ int(b,2)))[2:].zfill(8)
 
 def fill_array(s): # turns an 16 byte input string into a 4x4 array of bytes
@@ -739,11 +738,13 @@ def AES_HF_MIXCOL(col): # MixColumn function
         ['00000011', '00000001', '00000001', '00000010']
     ]
 
+    # initial vals
     returnCol = []
     val = '00000000'
     vals = []
     firstBitIsOne = False
 
+    # multiplying the column by the above matrix
     for i in range(len(binary_matrix)):
         for j in range(len(binary_matrix[i])):
             binary_col = hex_to_bin(col[j])
@@ -760,7 +761,7 @@ def AES_HF_MIXCOL(col): # MixColumn function
                 vals.append(binary_col)
 
 
-            else:                                      # we are multypling by three
+            else: # we are multypling by three
                 temp = binary_col
                 binary_col = left_shift(binary_col)
                 if firstBitIsOne:
@@ -787,11 +788,13 @@ def AES_HF_INV_MIXCOL(col): # Inverse of the MixColumn function
         ['00001011', '00001101', '00001001', '00001110']
     ]
 
+    # initial vals
     returnCol = []
     val = '00000000'
     vals = []
     firstBitIsOne = False
 
+    # multiplying the column by the above matrix
     for i in range(len(binary_matrix)):
         for j in range(len(binary_matrix[i])):
             binary_col = hex_to_bin(col[j])
@@ -837,24 +840,13 @@ def AES_ENCRYPT(key, input):        # implementation of AES which will be used i
             for j in range(len(AES_STATE[i])):
                     AES_STATE[i][j] = AES_KS_SBOX(hexxor(AES_STATE[i][j], roundKey[i][j])) # xors i,jth byte of state with round key then applies s-box
 
-
-        #print()
-        #print("-----ROUND: ", x+1, " -----")
-        #print("After S-Box: ", AES_STATE)
-
         AES_HF_SHIFTROWS(AES_STATE) # applies shiftrow function
-
-
-        #print("After permutation: ", AES_STATE)
 
         if(x < 9): # dont apply MixColumn function to 10th round
             for c in range(len(AES_STATE)):
                 col = AES_HF_MIXCOL([AES_STATE[0][c], AES_STATE[1][c], AES_STATE[2][c], AES_STATE[3][c]]) # applies MixColumn function to cth column
                 for b in range(4):
                     AES_STATE[b][c] = col[b]
-
-        #print("After mult: ", AES_STATE)
-        #print()
 
     # xors 10th round key before getting the final output
     CT = ""
@@ -881,25 +873,13 @@ def AES_DECRYPT(key, cipher):
         roundKey = fill_array(roundKeys[x]) # initializes the 4x4 array to be used for the round-keys
         for i in range(len(AES_STATE)):
             for j in range(len(AES_STATE[i])):
-                    #AES_STATE[i][j] = AES_KS_INV_SBOX(hexxor(AES_STATE[i][j], roundKey[i][j])) # xors i,jth byte of state with round key then applies s-box
-                    AES_STATE[i][j] = hexxor(AES_KS_INV_SBOX(AES_STATE[i][j]), roundKey[i][j])
-
-        #print()
-        #print("-----ROUND: ", x+1, " -----")
-        #print("After S-Box: ", AES_STATE)
-
-
-
-        #print("After permutation: ", AES_STATE)
+                    AES_STATE[i][j] = hexxor(AES_KS_INV_SBOX(AES_STATE[i][j]), roundKey[i][j]) # xors i,jth byte of state with round key then applies s-box
 
         if(x > 0): # dont apply MixColumn function to 10th round
             for c in range(len(AES_STATE)):
                 col = AES_HF_INV_MIXCOL([AES_STATE[0][c], AES_STATE[1][c], AES_STATE[2][c], AES_STATE[3][c]]) # applies MixColumn function to cth column
                 for b in range(4):
                     AES_STATE[b][c] = col[b]
-
-        #print("After mult: ", AES_STATE)
-        #print()
 
     # xors 10th round key before getting the final output
     PT = ""
@@ -929,6 +909,7 @@ def encrypt_cbc(key, msg):
     IV = secrets.token_hex(16)
     cipher += IV
     nextBlock = ""
+
     # the CBC encryption circuit using AES for the block cipher
     for i in range(0, len(hex_msg), 32):
         if i == 0:
@@ -946,7 +927,8 @@ def decrypt_cbc(key, ct):
     IV = ct[0:32]
     nextBlock = ""
     padding = 0
-    # the CBC encryption circuit using AES for the block cipher
+
+    # the CBC decryption circuit using AES for the block cipher
     for i in range(32, len(ct), 32):
 
         if i == 32:
@@ -957,7 +939,6 @@ def decrypt_cbc(key, ct):
             nextBlock = ct[i:i+32]
             pt += convert_to_str(hexxor(prevBlock, AES_DECRYPT(key, nextBlock)))
 
-    #pad = int(convert_to_hex(pt[len(pt) - 1]), 16)
     pt = pt.rstrip(pt[len(pt) - 1])
     return pt
 
@@ -1018,15 +999,6 @@ def decrypt_ctr(key, ct):
 
 
 def main():
-    #print(decrypt_cbc("140b41b22a29beb4061bda66b6747e14", encrypt_cbc("140b41b22a29beb4061bda66b6747e14", "This is a secret")))
-
-    #print(decrypt_ctr("36f18357be4dbd77f050515c73fcf9f2", encrypt_ctr("36f18357be4dbd77f050515c73fcf9f2", "This is a seriously secret secret, and no-one will ever figure out the secret")))
-
-    #print(decrypt_ctr("36f18357be4dbd77f050515c73fcf9f2", "69dda8455c7dd4254bf353b773304eec0ec7702330098ce7f7520d1cbbb20fc388d1b0adb5054dbd7370849dbf0b88d393f252e764f1f5f7ad97ef79d59ce29f5f51eeca32eabedd9afa9329"))
-
-    #print(decrypt_ctr("36f18357be4dbd77f050515c73fcf9f2", "770b80259ec33beb2561358a9f2dc617e46218c0a53cbeca695ae45faa8952aa0e311bde9d4e01726d3184c34451"))
-
-
     print()
     while True:
         print("Welcome to the block cipher encryption program, to continue, please select a mode of operation:")
