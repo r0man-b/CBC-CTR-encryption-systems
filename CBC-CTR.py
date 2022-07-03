@@ -920,7 +920,7 @@ def encrypt_cbc(key, msg):
     if padding != 0:
         for i in range(padding):
             hex_msg += '0'
-            hex_msg += hex(padding)[2:]
+            hex_msg += hex(padding)[3:]
     else:
         for i in range(16):
             hex_msg += '10'
@@ -957,7 +957,7 @@ def decrypt_cbc(key, ct):
             nextBlock = ct[i:i+32]
             pt += convert_to_str(hexxor(prevBlock, AES_DECRYPT(key, nextBlock)))
 
-    pad = int(convert_to_hex(pt[len(pt) - 1]), 16)
+    #pad = int(convert_to_hex(pt[len(pt) - 1]), 16)
     pt = pt.rstrip(pt[len(pt) - 1])
     return pt
 
@@ -966,18 +966,6 @@ def decrypt_cbc(key, ct):
 def encrypt_ctr(key, msg): # Counter mode encryption using the above implementation of AES
     cipher = ""
     hex_msg = convert_to_hex(msg)
-
-    # pad the message if not divisible by blocksize, otherwise add a dummy block
-    '''
-    padding = 16 - len(msg) % 16
-    if padding != 0:
-        for i in range(padding):
-            hex_msg += '0'
-            hex_msg += hex(padding)[2:]
-    else:
-        for i in range(16):
-            hex_msg += '10'
-    '''
 
     # create the initialization vector and make it the start of the ciphertext
     nonce = secrets.token_hex(16)
@@ -1030,63 +1018,137 @@ def decrypt_ctr(key, ct):
 
 
 def main():
-    #print(decrypt_cbc("36f18357be4dbd77f050515c73fcf9f2", encrypt_cbc("36f18357be4dbd77f050515c73fcf9f2", "this is a seriously secret secret")))
+    #print(decrypt_cbc("140b41b22a29beb4061bda66b6747e14", encrypt_cbc("140b41b22a29beb4061bda66b6747e14", "This is a secret")))
 
-    print(decrypt_ctr("36f18357be4dbd77f050515c73fcf9f2", encrypt_ctr("36f18357be4dbd77f050515c73fcf9f2", "This is a seriously secret secret, and no-one will ever figure out the secret")))
+    #print(decrypt_ctr("36f18357be4dbd77f050515c73fcf9f2", encrypt_ctr("36f18357be4dbd77f050515c73fcf9f2", "This is a seriously secret secret, and no-one will ever figure out the secret")))
 
-    print(decrypt_ctr("36f18357be4dbd77f050515c73fcf9f2", "69dda8455c7dd4254bf353b773304eec0ec7702330098ce7f7520d1cbbb20fc388d1b0adb5054dbd7370849dbf0b88d393f252e764f1f5f7ad97ef79d59ce29f5f51eeca32eabedd9afa9329"))
+    #print(decrypt_ctr("36f18357be4dbd77f050515c73fcf9f2", "69dda8455c7dd4254bf353b773304eec0ec7702330098ce7f7520d1cbbb20fc388d1b0adb5054dbd7370849dbf0b88d393f252e764f1f5f7ad97ef79d59ce29f5f51eeca32eabedd9afa9329"))
 
-    print(decrypt_ctr("36f18357be4dbd77f050515c73fcf9f2", "770b80259ec33beb2561358a9f2dc617e46218c0a53cbeca695ae45faa8952aa0e311bde9d4e01726d3184c34451"))
-
-
+    #print(decrypt_ctr("36f18357be4dbd77f050515c73fcf9f2", "770b80259ec33beb2561358a9f2dc617e46218c0a53cbeca695ae45faa8952aa0e311bde9d4e01726d3184c34451"))
 
 
-
-
-
-    '''
-            if i + 32 == len(ct):
-                print(ct[i + 32 - 1])
-                padding = int(ct[i + 32 - 1], 16)
-                print(padding)
-
-    print("\nThis is a cipher block chaining encryption program, to continue, please select a mode of operation:\n")
+    print()
     while True:
-        print("To encrypt a message using a randomized key: please type '1'.")
-        print("To encrypt a message using a custom provided key: please type '2'.")
-        print("To decrypt a (key, ciphertext) pair: please type '3'.")
+        print("Welcome to the block cipher encryption program, to continue, please select a mode of operation:")
+        print("-------------------------------------------------------------------------------------------------")
+        print("To encrypt a message using Cipher block chaining: please type '1'.")
+        print("To encrypt a message using Randomized counter mode: please type '2'.")
         print("To exit, please type 'q'.")
         usr_input = input()
         print()
 
-        if usr_input == '1':
-            print("You have selected encryption using a randomized key, please input your message below.")
-            print("message: ", end = '')
-            msg = input()
-            key = secrets.token_bytes(16)
-            encrypt_cbc(key, msg)
 
-        elif usr_input == '2':
-            print("You have selected encryption using a provided key, please input your message and key below.")
-            print("message: ", end = '')
-            msg = input()
-            print("key: ", end = '')
-            key = input()
+        if usr_input == '1': # CBC mode
+            print("You have chosen CBC encryption mode.")
+            while True:
+                print("-------------------------------------------------------------")
+                print("To encrypt a message using a randomized key: please type '1'.")
+                print("To encrypt a message using a custom provided key: please type '2'.")
+                print("To decrypt a (key, ciphertext) pair: please type '3'.")
+                print("To go back, please type 'b'.")
+                print("To exit, please type 'q'.")
+                usr_input2 = input()
+                print()
 
-        elif usr_input == '3':
-            print("You have selected the decryption of a (key, ciphertext) pair, please input your ciphertext and key below.")
-            print("ciphertext: ", end = '')
-            ct = input()
-            print("key: ", end = '')
-            key = input()
+                if usr_input2 == '1':
+                    print("You have selected encryption using a randomized key, please input your message below.")
+                    print("message: ", end = '')
+                    msg = input()
+                    print()
+                    key = secrets.token_hex(16)
+                    print("Your randomly chosen key is: " + str(key))
+                    print("Your ciphertext is: " + str(encrypt_cbc(key, msg)))
+                    print()
+
+                elif usr_input2 == '2':
+                    print("You have selected encryption using a provided key, please input your message and key below.")
+                    print("message: ", end = '')
+                    msg = input()
+                    print("key (in hex): ", end = '')
+                    key = input()
+                    print()
+                    print("Your ciphertext is: " + str(encrypt_cbc(key, msg)))
+                    print()
+
+                elif usr_input2 == '3':
+                    print("You have selected the decryption of a (key, ciphertext) pair, please input your ciphertext and key below.")
+                    print("ciphertext (in hex): ", end = '')
+                    ct = input()
+                    print("key (in hex): ", end = '')
+                    key = input()
+                    print("\nYour secret message is: \"" + str(decrypt_cbc(key, ct)) + "\"")
+                    print()
+
+                elif usr_input2 == 'b':
+                    break
+
+                elif usr_input2 == 'q':
+                    print("Exiting program")
+                    return
+
+                else:
+                    print("Input not recognized, please try again.")
+                    print()
+
+        elif usr_input == '2': # CTR mode
+            print("You have chosen CTR encryption mode.")
+            while True:
+                print("-------------------------------------------------------------")
+                print("To encrypt a message using a randomized key: please type '1'.")
+                print("To encrypt a message using a custom provided key: please type '2'.")
+                print("To decrypt a (key, ciphertext) pair: please type '3'.")
+                print("To go back, please type 'b'.")
+                print("To exit, please type 'q'.")
+                usr_input2 = input()
+                print()
+
+                if usr_input2 == '1':
+                    print("You have selected encryption using a randomized key, please input your message below.")
+                    print("message: ", end = '')
+                    msg = input()
+                    print()
+                    key = secrets.token_hex(16)
+                    print("Your randomly chosen key is: " + str(key))
+                    print("Your ciphertext is: " + str(encrypt_ctr(key, msg)))
+                    print()
+
+                elif usr_input2 == '2':
+                    print("You have selected encryption using a provided key, please input your message and key below.")
+                    print("message: ", end = '')
+                    msg = input()
+                    print("key (in hex): ", end = '')
+                    key = input()
+                    print()
+                    print("Your ciphertext is: " + str(encrypt_ctr(key, msg)))
+                    print()
+
+                elif usr_input2 == '3':
+                    print("You have selected the decryption of a (key, ciphertext) pair, please input your ciphertext and key below.")
+                    print("ciphertext (in hex): ", end = '')
+                    ct = input()
+                    print("key (in hex): ", end = '')
+                    key = input()
+                    print("\nYour secret message is: \"" + str(decrypt_ctr(key, ct)) + "\"")
+                    print()
+
+                elif usr_input2 == 'b':
+                    break
+
+                elif usr_input2 == 'q':
+                    print("Exiting program")
+                    return
+
+                else:
+                    print("Input not recognized, please try again.")
+                    print()
 
         elif usr_input == 'q':
             print("Exiting program")
-            break
+            return
 
         else:
             print("Input not recognized, please try again.")
             print()
-        '''
+
 if __name__ == '__main__':
     main()
